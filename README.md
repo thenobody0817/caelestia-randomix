@@ -30,8 +30,8 @@ Behaviour in the shell:
   text fields are usable — the same mechanism as the Nexus/audio popouts.
 - **`SUPER + CTRL + R`** toggles it (the bind ships in
   `~/.config/caelestia/hypr-user.lua`).
-- **`caelestia shell ipc call randomix toggle`** (also `open`, `close`,
-  `mode <name>`, `trigger`).
+- **`caelestia shell randomix toggle`** (or `qs -c caelestia ipc call randomix
+  toggle`) — also `open`, `close`, `mode <name>`, `trigger`.
 
 ## Install
 
