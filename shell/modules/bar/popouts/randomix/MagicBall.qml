@@ -68,6 +68,23 @@ StyledFlickable {
         width: root.width
         spacing: Tokens.spacing.small
 
+        StyledText {
+            Layout.fillWidth: true
+            visible: !Randomix.hideDescriptions
+            text: qsTr("Magic Ball")
+            color: Colours.tPalette.m3onSurface
+            font: Tokens.font.body.builders.large.weight(Font.Bold).build()
+        }
+
+        StyledText {
+            Layout.fillWidth: true
+            visible: !Randomix.hideDescriptions
+            text: qsTr("The magic ball will tell you the answers! Ask something and it will help you.")
+            color: Colours.tPalette.m3onSurfaceVariant
+            font: Tokens.font.label.medium
+            wrapMode: Text.WordWrap
+        }
+
         StyledTextField {
             id: question
 
@@ -108,13 +125,32 @@ StyledFlickable {
             }
         }
 
-        StyledText {
+        Item {
             Layout.fillWidth: true
-            horizontalAlignment: Text.AlignHCenter
-            text: root.answer === "" ? qsTr("Tap the ball") : root.answer
-            color: root.answer === "" ? Colours.tPalette.m3onSurfaceVariant : Colours.tPalette.m3primary
-            font: Tokens.font.body.builders.medium.weight(Font.Medium).build()
-            wrapMode: Text.WordWrap
+            implicitHeight: answerText.implicitHeight + Tokens.spacing.small
+            clip: true
+
+            StyledText {
+                id: answerText
+
+                anchors.verticalCenter: parent.verticalCenter
+                x: parent.width
+                text: root.answer === "" ? qsTr("Tap the ball") : root.answer
+                color: root.answer === "" ? Colours.tPalette.m3onSurfaceVariant : Colours.tPalette.m3primary
+                font: Tokens.font.body.builders.medium.weight(Font.Medium).build()
+
+                SequentialAnimation on x {
+                    id: marqueeAnim
+                    running: root.answer !== ""
+                    loops: Animation.Infinite
+
+                    PropertyAnimation {
+                        from: parent.width
+                        to: -answerText.implicitWidth
+                        duration: Math.max(3000, answerText.implicitWidth * 30)
+                    }
+                }
+            }
         }
 
         RowLayout {

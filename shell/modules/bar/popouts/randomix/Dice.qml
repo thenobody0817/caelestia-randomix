@@ -127,6 +127,23 @@ StyledFlickable {
         width: root.width
         spacing: Tokens.spacing.small
 
+        StyledText {
+            Layout.fillWidth: true
+            visible: !Randomix.hideDescriptions
+            text: qsTr("Dice mode")
+            color: Colours.tPalette.m3onSurface
+            font: Tokens.font.body.builders.large.weight(Font.Bold).build()
+        }
+
+        StyledText {
+            Layout.fillWidth: true
+            visible: !Randomix.hideDescriptions
+            text: qsTr("Choose the type and how many, then throw!")
+            color: Colours.tPalette.m3onSurfaceVariant
+            font: Tokens.font.label.medium
+            wrapMode: Text.WordWrap
+        }
+
         RowLayout {
             Layout.fillWidth: true
             spacing: Tokens.spacing.small

@@ -121,6 +121,17 @@ StyledFlickable {
         }
 
         SectionLabel {
+            text: qsTr("Display")
+        }
+
+        SettingSwitch {
+            label: qsTr("Hide descriptions")
+            hint: qsTr("Hide the description text on each mode page")
+            value: Randomix.hideDescriptions
+            onToggled: checked => Randomix.hideDescriptions = checked
+        }
+
+        SectionLabel {
             text: qsTr("Sound")
         }
 

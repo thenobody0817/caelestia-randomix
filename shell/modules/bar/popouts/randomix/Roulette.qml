@@ -9,23 +9,18 @@ import qs.components.containers
 import qs.services
 
 // Roulette: options with a Canvas wheel, custom ranges, presets, and the
-// recent-options list.
-//
-// Geometry: slices are cut from angle 0 (3 o'clock) and run clockwise, so after
-// rotating by A a slice that began at s occupies [s + A, ...). The pointer sits
-// at the top, -90 degrees. The winner is drawn first and the landing angle is
-// solved for it, rather than reading whichever slice the animation happens to
-// stop over.
+// recent-options list. Mirrors the upstream's "Options | Range" toggle.
 StyledFlickable {
     id: root
 
     readonly property var options: Randomix.options
     readonly property bool canSpin: root.options.length >= 2
-    readonly property int wheelSize: 230
+    readonly property int wheelSize: 220
 
     property real angle: 0
     property string winner: ""
     property int number: -1
+    property bool rangeMode: false
 
     readonly property real sliceDeg: root.options.length > 0 ? 360 / root.options.length : 360
 
@@ -68,6 +63,18 @@ StyledFlickable {
         Randomix.rangeMax = hi;
     }
 
+    function addSet(name: string): void {
+        if (name === "letters") {
+            Randomix.applyPreset("letters");
+        } else if (name === "numbers") {
+            Randomix.rangeMin = 1;
+            Randomix.rangeMax = 100;
+            root.rangeMode = true;
+        } else if (name === "cards") {
+            Randomix.applyPreset("cards");
+        }
+    }
+
     Component.onCompleted: Randomix.registerPrimary(Randomix.tabs.indexOf("roulette"), root.spin)
 
     contentWidth: width
@@ -100,24 +107,168 @@ StyledFlickable {
         width: root.width
         spacing: Tokens.spacing.small
 
+        StyledText {
+            Layout.fillWidth: true
+            visible: !Randomix.hideDescriptions
+            text: qsTr("Roulette mode")
+            color: Colours.tPalette.m3onSurface
+            font: Tokens.font.body.builders.large.weight(Font.Bold).build()
+        }
+
+        StyledText {
+            Layout.fillWidth: true
+            visible: !Randomix.hideDescriptions
+            text: qsTr("Do you have to choose something? Let the roulette decide!")
+            color: Colours.tPalette.m3onSurfaceVariant
+            font: Tokens.font.label.medium
+            wrapMode: Text.WordWrap
+        }
+
+        // Mode toggle
+        StyledRect {
+            Layout.fillWidth: true
+            implicitHeight: toggleRow.implicitHeight + Tokens.padding.extraSmall * 2
+            radius: Tokens.rounding.full
+            color: Colours.tPalette.m3surfaceContainerHighest
+
+            RowLayout {
+                id: toggleRow
+
+                anchors.fill: parent
+                anchors.margins: Tokens.padding.extraSmall
+                spacing: Tokens.padding.extraSmall
+
+                TextButton {
+                    Layout.fillWidth: true
+                    text: qsTr("Options")
+                    type: ButtonBase.Tonal
+                    isToggle: true
+                    checked: !root.rangeMode
+                    onClicked: root.rangeMode = false
+                }
+
+                TextButton {
+                    Layout.fillWidth: true
+                    text: qsTr("Range")
+                    type: ButtonBase.Tonal
+                    isToggle: true
+                    checked: root.rangeMode
+                    onClicked: root.rangeMode = true
+                }
+            }
+        }
+
+        // Options mode
+        ColumnLayout {
+            Layout.fillWidth: true
+            visible: !root.rangeMode
+            spacing: Tokens.spacing.small
+
+            RowLayout {
+                Layout.fillWidth: true
+                spacing: Tokens.spacing.extraSmall
+
+                StyledTextField {
+                    id: newOption
+
+                    Layout.fillWidth: true
+                    placeholderText: qsTr("Enter an option…")
+                    onAccepted: root.addOption()
+                }
+
+                TextButton {
+                    text: qsTr("Add")
+                    type: ButtonBase.Filled
+                    enabled: newOption.text.trim().length > 0 && Randomix.options.length < 30
+                    onClicked: root.addOption()
+                }
+            }
+
+            OptionChips {
+                Layout.fillWidth: true
+
+                visible: Randomix.options.length > 0
+                model: Randomix.options
+
+                onRemoveRequested: index => Randomix.removeOption(index)
+            }
+
+            RowLayout {
+                Layout.fillWidth: true
+                visible: Randomix.options.length > 0
+                spacing: Tokens.spacing.extraSmall
+
+                Item { Layout.fillWidth: true }
+
+                TextButton {
+                    text: qsTr("Delete all")
+                    type: ButtonBase.Text
+                    onClicked: Randomix.clearOptions()
+                }
+            }
+        }
+
+        // Range mode
+        ColumnLayout {
+            Layout.fillWidth: true
+            visible: root.rangeMode
+            spacing: Tokens.spacing.small
+
+            RowLayout {
+                Layout.fillWidth: true
+                spacing: Tokens.spacing.extraSmall
+
+                StyledTextField {
+                    id: minField
+
+                    Layout.fillWidth: true
+                    text: Randomix.rangeMin
+                    placeholderText: qsTr("Min")
+                    validator: IntValidator {
+                        bottom: 0
+                        top: 99999
+                    }
+                    onEditingFinished: root.commitRange()
+                }
+
+                StyledTextField {
+                    id: maxField
+
+                    Layout.fillWidth: true
+                    text: Randomix.rangeMax
+                    placeholderText: qsTr("Max")
+                    validator: IntValidator {
+                        bottom: 0
+                        top: 99999
+                    }
+                    onEditingFinished: root.commitRange()
+                }
+
+                TextButton {
+                    text: qsTr("Draw")
+                    type: ButtonBase.Tonal
+                    onClicked: root.drawNumber()
+                }
+
+                StyledText {
+                    visible: root.number >= 0
+                    text: root.number < 0 ? "" : String(root.number)
+                    color: Colours.tPalette.m3primary
+                    font: Tokens.font.body.builders.medium.weight(Font.Medium).build()
+                }
+            }
+        }
+
+        // Presets
         RowLayout {
             Layout.fillWidth: true
             spacing: Tokens.spacing.extraSmall
 
             Repeater {
                 model: [
-                    {
-                        label: qsTr("Letters"),
-                        key: "letters"
-                    },
-                    {
-                        label: qsTr("Cards"),
-                        key: "cards"
-                    },
-                    {
-                        label: qsTr("Numbers"),
-                        key: "numbers"
-                    }
+                    { label: qsTr("Letters"), key: "letters" },
+                    { label: qsTr("Cards"), key: "cards" },
+                    { label: qsTr("Numbers"), key: "numbers" }
                 ]
 
                 delegate: TextButton {
@@ -134,44 +285,11 @@ StyledFlickable {
             }
         }
 
-        RowLayout {
-            Layout.fillWidth: true
-            spacing: Tokens.spacing.extraSmall
-
-            StyledTextField {
-                id: newOption
-
-                Layout.fillWidth: true
-                placeholderText: qsTr("Add an option…")
-                onAccepted: root.addOption()
-            }
-
-            TextButton {
-                text: qsTr("Add")
-                type: ButtonBase.Filled
-                enabled: newOption.text.trim().length > 0
-                onClicked: root.addOption()
-            }
-
-            TextButton {
-                text: qsTr("Clear")
-                type: ButtonBase.Text
-                onClicked: Randomix.clearOptions()
-            }
-        }
-
-        OptionChips {
-            Layout.fillWidth: true
-
-            visible: Randomix.options.length > 0
-            model: Randomix.options
-
-            onRemoveRequested: index => Randomix.removeOption(index)
-        }
-
+        // Wheel
         Item {
             Layout.fillWidth: true
             Layout.preferredHeight: root.wheelSize
+            Layout.alignment: Qt.AlignHCenter
 
             Canvas {
                 id: wheel
@@ -190,7 +308,6 @@ StyledFlickable {
                     const offset = root.angle * Math.PI / 180;
 
                     ctx.clearRect(0, 0, w, h);
-                    ctx.lineWidth = 1;
 
                     const options = root.options;
                     if (options.length < 2) {
@@ -260,85 +377,62 @@ StyledFlickable {
             }
         }
 
-        RowLayout {
+        TextButton {
             Layout.fillWidth: true
-            spacing: Tokens.spacing.small
-
-            StyledText {
-                Layout.fillWidth: true
-                visible: root.winner !== ""
-                text: root.winner === "" ? "" : qsTr("Winner: %1").arg(root.winner)
-                color: Colours.tPalette.m3primary
-                font: Tokens.font.body.builders.medium.weight(Font.Bold).build()
-                elide: Text.ElideRight
-            }
-
-            Item {
-                Layout.fillWidth: true
-            }
-
-            TextButton {
-                text: qsTr("Spin")
-                type: ButtonBase.Filled
-                enabled: root.canSpin
-                onClicked: root.spin()
-            }
+            text: qsTr("Spin")
+            type: ButtonBase.Filled
+            enabled: root.canSpin
+            onClicked: root.spin()
         }
 
         StyledText {
             Layout.fillWidth: true
-            text: qsTr("Custom range (0–99999)")
-            color: Colours.tPalette.m3onSurfaceVariant
-            font: Tokens.font.label.large
+            visible: root.winner !== ""
+            horizontalAlignment: Text.AlignHCenter
+            text: root.winner === "" ? "" : qsTr("Winner: %1").arg(root.winner)
+            color: Colours.tPalette.m3primary
+            font: Tokens.font.body.builders.large.weight(Font.Medium).build()
         }
 
-        RowLayout {
+        // Recent
+        ColumnLayout {
             Layout.fillWidth: true
             spacing: Tokens.spacing.extraSmall
 
-            StyledTextField {
-                id: minField
-
-                Layout.fillWidth: true
-                text: Randomix.rangeMin
-                placeholderText: qsTr("Min")
-                validator: IntValidator {
-                    bottom: 0
-                    top: 99999
-                }
-                onEditingFinished: root.commitRange()
-            }
-
-            StyledTextField {
-                id: maxField
-
-                Layout.fillWidth: true
-                text: Randomix.rangeMax
-                placeholderText: qsTr("Max")
-                validator: IntValidator {
-                    bottom: 0
-                    top: 99999
-                }
-                onEditingFinished: root.commitRange()
-            }
-
-            TextButton {
-                text: qsTr("Draw")
-                type: ButtonBase.Tonal
-                onClicked: root.drawNumber()
-            }
-
             StyledText {
-                visible: root.number >= 0
-                text: root.number < 0 ? "" : String(root.number)
-                color: Colours.tPalette.m3primary
-                font: Tokens.font.body.builders.medium.weight(Font.Bold).build()
+                Layout.fillWidth: true
+                text: qsTr("Recent")
+                color: Colours.tPalette.m3onSurfaceVariant
+                font: Tokens.font.label.large
             }
-        }
 
-        History {
-            Layout.fillWidth: true
-            Layout.topMargin: Tokens.spacing.small
+            RowLayout {
+                Layout.fillWidth: true
+                spacing: Tokens.spacing.extraSmall
+
+                Repeater {
+                    model: ["Letters", "Numbers", "Cards"]
+
+                    delegate: TextButton {
+                        required property string modelData
+
+                        text: modelData
+                        type: ButtonBase.Tonal
+                        onClicked: {
+                            if (modelData === "Letters")
+                                root.addSet("letters");
+                            else if (modelData === "Numbers")
+                                root.addSet("numbers");
+                            else
+                                root.addSet("cards");
+                        }
+                    }
+                }
+            }
+
+            History {
+                Layout.fillWidth: true
+            }
         }
     }
 }

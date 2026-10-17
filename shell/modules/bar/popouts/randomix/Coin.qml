@@ -74,6 +74,23 @@ StyledFlickable {
         width: root.width
         spacing: Tokens.spacing.medium
 
+        StyledText {
+            Layout.fillWidth: true
+            visible: !Randomix.hideDescriptions
+            text: qsTr("Coin mode")
+            color: Colours.tPalette.m3onSurface
+            font: Tokens.font.body.builders.large.weight(Font.Bold).build()
+        }
+
+        StyledText {
+            Layout.fillWidth: true
+            visible: !Randomix.hideDescriptions
+            text: qsTr("Flipping a coin is easy — just heads or tails. Let the coin talk!")
+            color: Colours.tPalette.m3onSurfaceVariant
+            font: Tokens.font.label.medium
+            wrapMode: Text.WordWrap
+        }
+
         Item {
             Layout.fillWidth: true
             Layout.preferredHeight: 140

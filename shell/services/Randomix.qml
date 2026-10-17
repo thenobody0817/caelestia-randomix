@@ -99,8 +99,9 @@ Singleton {
 
     // Shared
     property bool sounds: true
+    property bool hideDescriptions: false
 
-    readonly property var diceTypes: ["d4", "d6", "d10", "d12", "d20"]
+    readonly property var diceTypes: ["d4", "d6", "d8", "d10", "d12", "d20"]
     readonly property int diceSides: parseInt(root.diceType.substring(1)) || 6
 
     // The classic twenty, in Randomix's order.
@@ -158,6 +159,8 @@ Singleton {
     function addOption(text: string): void {
         text = text.trim();
         if (!text)
+            return;
+        if (root.options.length >= 30)
             return;
         if (!root.duplicates && root.options.includes(text))
             return;
@@ -366,6 +369,7 @@ Singleton {
         root.customAnswers = [];
         root.rudeAnswers = false;
         root.sounds = true;
+        root.hideDescriptions = false;
     }
 
     function save(): void {
@@ -386,6 +390,7 @@ Singleton {
             customAnswers: root.customAnswers,
             rudeAnswers: root.rudeAnswers,
             sounds: root.sounds,
+            hideDescriptions: root.hideDescriptions,
             lastTab: root.currentTab
         }, null, 2));
     }
@@ -422,6 +427,8 @@ Singleton {
             root.rudeAnswers = data.rudeAnswers;
         if (typeof data.sounds === "boolean")
             root.sounds = data.sounds;
+        if (typeof data.hideDescriptions === "boolean")
+            root.hideDescriptions = data.hideDescriptions;
         if (Number.isInteger(data.lastTab))
             root.currentTab = data.lastTab;
     }
@@ -440,6 +447,7 @@ Singleton {
     onCustomAnswersChanged: root.save()
     onRudeAnswersChanged: root.save()
     onSoundsChanged: root.save()
+    onHideDescriptionsChanged: root.save()
     onCurrentTabChanged: root.save()
 
     FileView {
